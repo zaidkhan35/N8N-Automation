@@ -1,0 +1,276 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Facebook Image Post Generator",
+        "formDescription": "Enter a topic and this will generate an image, caption, and hashtags for Facebook.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -448,
+        0
+      ],
+      "id": "c68bccd7-88c2-4a33-a26c-7ee22174b576",
+      "name": "On form submission",
+      "webhookId": "a4c5c776-579e-4fd0-b862-be3b01c6dc78"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Topic: {{ $json.Topic }}\n\nGenerate content for a Facebook image post about this topic. Return ONLY valid JSON, no markdown, no code fences, no extra text, in this exact format:\n\n{\n  \"image_prompt\": \"a detailed, cinematic description suitable for an AI image generator, no text or words in the image\",\n  \"caption\": \"an engaging Facebook caption, 1-3 sentences, friendly tone\",\n  \"hashtags\": \"5-8 relevant hashtags separated by spaces, e.g. #example #topic\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "c37c5d20-8d6e-4423-b363-9d1b4aae3c36",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output[0].content[0].text;\nconst clean = raw.replace(/```json|```/g, '').trim();\nconst data = JSON.parse(clean);\n\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        0
+      ],
+      "id": "2dc5e036-a571-47f8-b451-a96480b00109",
+      "name": "Separate-image-caption-hastages"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-image-1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-IMAGE-1-MINI"
+        },
+        "prompt": "={{ $json.image_prompt }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "ea65558f-4046-46e2-a279-48bf75ba5074",
+      "name": "Generate an image",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ba7f55ff-4f29-4a9e-971f-45e5d27018c7",
+              "name": "caption",
+              "value": "={{ $('Separate-image-caption-hastages').item.json.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "ce316db8-1003-405f-afb8-38f5bd0a7d8a",
+              "name": "hashtags",
+              "value": "={{ $('Separate-image-caption-hastages').item.json.hashtags }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        592,
+        0
+      ],
+      "id": "21291633-42dc-4fa0-b3f5-c4220946ce5a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "=facebook-automation-zaid1",
+        "fileName": "=facebook-posts/{{ $now.toFormat('yyyy-MM-dd_HHmmss') }}.png",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.awsS3",
+      "typeVersion": 2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "8abb6ce5-1e59-4bcd-88a4-8b081952d66f",
+      "name": "Upload a file",
+      "credentials": {
+        "aws": {
+          "id": "IoMxKKOs8F6uXMtD",
+          "name": "AWS (IAM) account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "1261880390352266",
+        "edge": "photos",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "url",
+                "value": "={{ $('Upload a file').item.json.Location }}"
+              },
+              {
+                "name": "caption",
+                "value": "=     {{ $('Edit Fields').item.json.caption }} {{ $('Edit Fields').item.json.hashtags }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "dc8f8a99-8126-41dc-a74d-0542795b1f77",
+      "name": "Facebook Graph API",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "gIq5UbQ0XJpNAqFV",
+          "name": "Facebook Graph account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Separate-image-caption-hastages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate-image-caption-hastages": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1e368d4e-9595-475c-9f7a-e06f7866fa4c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0665ba485992d1762739399c667b9c230846eb8868dfe576b82a1555461f497f"
+  },
+  "nodeGroups": [],
+  "id": "EVt4IXYNNHLCAHbT",
+  "tags": []
+}

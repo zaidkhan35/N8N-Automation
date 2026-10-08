@@ -1,0 +1,1052 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "YouTube Video Generator",
+        "formDescription": "Enter a topic to generate a video",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -2592,
+        656
+      ],
+      "id": "bcfa3a47-d66f-47eb-9f22-a96b352617a7",
+      "name": "On form submission",
+      "webhookId": "e7848ab8-4c53-4637-b558-d419df0f52ff"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a professional video scriptwriter and visual director for short-form YouTube news/education videos.\n\nTASK: Given a topic, write a ~110 word narration script for a 40-second video, split into exactly 5 scenes.\n\nFor each scene, generate:\n1. \"narration\" — a natural, spoken-style script line (roughly 20-25 words) that flows smoothly into the next scene, written like a professional narrator/documentary voiceover. Keep sentences clear and easy to follow when spoken aloud.\n\n2. \"image_prompt\" — a highly detailed, concrete visual description for AI image generation. Write it like a photojournalist's shot list, not abstract or artistic language. Include:\n   - Exact subject and action (what/who is visible, what they're doing)\n   - Exact setting/location\n   - Camera framing (e.g. \"wide shot\", \"close-up\", \"medium shot\")\n   - Lighting (e.g. \"golden hour\", \"soft overcast daylight\", \"studio lighting\")\n   - Style: photorealistic, photojournalism, DSLR photo, sharp focus\n   - Avoid vague/flowery words like \"vibrant\", \"dynamic\", \"stunning\" — describe only what is literally visible\n\nSAFETY RULE: Never include violent, graphic, war-combat, weapons, injury, or civilian-casualty imagery in \"image_prompt\", even if the topic is political or conflict-related. Instead, represent such topics neutrally and safely — e.g. maps, flags, diplomatic meetings, press conferences, peaceful demonstrations, historical documents, or symbolic imagery. This is required to avoid image-generation safety rejections.\n\nLANGUAGE: Write \"narration\" in {{LANGUAGE}} (e.g. English, Urdu, Spanish). Always keep \"image_prompt\" in English regardless of narration language, since it is only used for image generation.\n\nOUTPUT FORMAT: Return ONLY valid JSON, no markdown, no code fences, no extra text before or after. Format:\n[\n  {\"narration\": \"...\", \"image_prompt\": \"...\"},\n  {\"narration\": \"...\", \"image_prompt\": \"...\"},\n  {\"narration\": \"...\", \"image_prompt\": \"...\"},\n  {\"narration\": \"...\", \"image_prompt\": \"...\"},\n  {\"narration\": \"...\", \"image_prompt\": \"...\"}\n]\n\nTopic: {{ $json.Topic }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -2368,
+        656
+      ],
+      "id": "06d18607-f1eb-4875-8870-c8549e2e42e3",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output[0].content[0].text;\nconst scenes = JSON.parse(raw);\n\nreturn scenes.map(scene => ({\n  json: scene\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        656
+      ],
+      "id": "d010572f-69b9-4e06-b80a-9a191e97a5f9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.fullScript }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1344,
+        848
+      ],
+      "id": "d64554c1-965e-4dac-91d4-de9628a66a3a",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst fullScript = items.map(item => item.json.narration).join(' ');\nreturn [{ json: { fullScript } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1568,
+        848
+      ],
+      "id": "80b4d38b-fd3b-4f60-b806-7888c2109d5f",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst wordsPerSecond = 2.5;\n\nlet currentTime = 0;\nconst scenesWithTiming = items.map(item => {\n  const wordCount = item.json.narration.trim().split(/\\s+/).length;\n  const duration = wordCount / wordsPerSecond;\n  \n  const scene = {\n    narration: item.json.narration,\n    image_prompt: item.json.image_prompt,\n    start: parseFloat(currentTime.toFixed(2)),\n    length: parseFloat(duration.toFixed(2))\n  };\n  \n  currentTime += duration;\n  return scene;\n});\n\nreturn scenesWithTiming.map(scene => ({ json: scene }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        480
+      ],
+      "id": "556e6095-1ba6-4e4c-b0ff-df12a7ee38b3",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1568,
+        480
+      ],
+      "id": "b3f506ef-f0fb-4166-ae35-c715bec141df",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-image-1-mini"
+        },
+        "prompt": "={{ $json.image_prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1344,
+        480
+      ],
+      "id": "a51732e7-a5a4-4f77-b3e1-1ad4f83a4431",
+      "name": "Generate an image",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "images",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        144
+      ],
+      "id": "813ee530-11fa-45cc-83db-f55bc5cd6395",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1120,
+        80
+      ],
+      "id": "8049b469-a315-481f-98ab-84848f92f6da",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/ingest/stage/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -896,
+        80
+      ],
+      "id": "4e8a4004-ca57-4ac4-aecf-f90140b8dff8",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.data.attributes.url }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -448,
+        80
+      ],
+      "id": "f3458eba-ad5e-428a-83c3-86421386ae34",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -672,
+        80
+      ],
+      "id": "9df81a47-1af1-4f30-86f8-9f6ca6046889",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.shotstack.io/ingest/stage/sources/{{ $('HTTP Request').item.json.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4ca377b2-5da9-417e-8d91-51393e6c2420",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        144
+      ],
+      "id": "29d4769c-d349-4593-8634-d74b0f3301b2",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8af118e-f203-457c-87a9-b07d6acd7121",
+              "name": "narration",
+              "value": "=    {{ $('Loop Over Items').item.json.narration }}",
+              "type": "string"
+            },
+            {
+              "id": "7e105be1-1c51-455b-b46c-70aaa1e36eef",
+              "name": "image_prompt",
+              "value": "=    {{ $('Loop Over Items').item.json.image_prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1120,
+        480
+      ],
+      "id": "cae8c126-7356-4502-a0f2-806c1c7fccd2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/ingest/stage/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -896,
+        416
+      ],
+      "id": "acfd5a65-6f1f-447a-a331-8d066b43e9f7",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -672,
+        480
+      ],
+      "id": "d519bf9d-6eb9-46bf-9b2f-cdca07acde68",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.data.attributes.url }}",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -448,
+        480
+      ],
+      "id": "10624d22-35e8-48de-95e7-26b46b460c1b",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.shotstack.io/ingest/stage/sources/{{ $('HTTP Request3').item.json.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        416
+      ],
+      "id": "8941fce2-6bb4-4f40-81e0-2022b8d20217",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "19b936d6-b7f7-4e55-aae7-f240719e9c82",
+              "name": "narration",
+              "value": "={{ $('Loop Over Items').item.json.narration }}",
+              "type": "string"
+            },
+            {
+              "id": "cb08e8be-bd29-4cdf-908d-1222674813f6",
+              "name": "image_prompt",
+              "value": "={{ $('Loop Over Items').item.json.image_prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "f7f5401b-52e4-4ac7-bbd1-ebad5d6d4083",
+              "name": "image_url",
+              "value": "={{ $json.data.attributes.source }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        560
+      ],
+      "id": "e53aa902-5177-4e24-b7e4-3d508dd99adb",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const merged = $input.all()[0].json;\n\nconst scenes = merged.images; // array of 5 images with narration, image_prompt, image_url\nconst audioUrl = merged.data.attributes.source; // your audio mp3 URL\nconst audioDuration = merged.data.attributes.duration; // full audio length in seconds\n\nconst sceneDuration = audioDuration / scenes.length;\n\nconst imageClips = scenes.map((scene, i) => ({\n  asset: { type: \"image\", src: scene.image_url },\n  start: i * sceneDuration,\n  length: sceneDuration,\n  fit: \"cover\"\n}));\n\nconst captionClips = scenes.map((scene, i) => ({\n  asset: {\n    type: \"html\",\n    html: `<p style=\"color:#ffffff;font-size:36px;text-align:center;\">${scene.narration}</p>`,\n    width: 900,\n    height: 200,\n    background: \"transparent\"\n  },\n  start: i * sceneDuration,\n  length: sceneDuration\n}));\n\nconst timeline = {\n  timeline: {\n    tracks: [\n      { clips: captionClips },\n      { clips: imageClips },\n      { clips: [{ asset: { type: \"audio\", src: audioUrl }, start: 0, length: audioDuration }] }\n    ]\n  },\n  output: { format: \"mp4\", resolution: \"sd\" }\n};\n\nreturn [{ json: timeline }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        144
+      ],
+      "id": "052da459-2bc7-4d63-9d54-9beabf042b70",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/stage/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        144
+      ],
+      "id": "2c9037e0-9c69-4822-8ed8-be315d2555d0",
+      "name": "HTTP Request6"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        480
+      ],
+      "id": "79b6a549-db42-46b7-959a-9764e95e9903",
+      "name": "Wait",
+      "webhookId": "fd426cfb-5694-4769-b813-3b70f2501766"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1743af78-b320-488f-a408-3167c0bd43e5",
+              "leftValue": "={{ $json.data.attributes.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        480
+      ],
+      "id": "37854edc-3071-44ad-9e1d-1e1c7bb0fee8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        144
+      ],
+      "id": "146845eb-8673-4cd6-9492-ffe62cfcd7d3",
+      "name": "Wait1",
+      "webhookId": "9d7ec88e-9c64-4a2c-9e34-026bc28d6451"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.shotstack.io/stage/render/{{ $('HTTP Request6').item.json.response.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "wbdrriAHe5tbrsuCKiV5LpNbqgvPi0TSkKt6C3gv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        80
+      ],
+      "id": "5d2ca36c-6537-45fd-a4dd-861f441a32c2",
+      "name": "HTTP Request7"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.response.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1792,
+        144
+      ],
+      "id": "767cccdd-d796-4044-9e1c-8d5189672210",
+      "name": "HTTP Request8"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        80
+      ],
+      "id": "d369d10a-d5c1-46f7-81e8-512e850af174",
+      "name": "Wait2",
+      "webhookId": "a02429fd-268a-4b15-a4a5-b6561b197ed1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e7efd21b-5164-46ae-9a13-15c167ab00b1",
+              "leftValue": "={{ $json.data.attributes.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        80
+      ],
+      "id": "95a19fa4-d944-4521-aaa1-b16fb71e309e",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "14a121dd-1925-411b-ad1c-56aa96341ec2",
+              "leftValue": "={{ $json.response.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        144
+      ],
+      "id": "cb05ee79-88e1-485b-ae34-acf601f99a24",
+      "name": "If2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request7": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9d144ab4-9190-49ba-a7ca-870d37d01a19",
+  "meta": {
+    "instanceId": "c578993c1d8c153c6e9d2391bc3b5c63ad79eac48c0df305d98d51a9e5200522"
+  },
+  "nodeGroups": [],
+  "id": "xe7dkdg0rTIuNfic",
+  "tags": []
+}
