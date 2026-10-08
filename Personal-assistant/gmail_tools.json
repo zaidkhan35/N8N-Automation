@@ -1,0 +1,289 @@
+{
+  "name": "gmail_tools",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"operation\": \"send\",\n  \"to\": \"test@example.com\",\n  \"subject\": \"Hello\",\n  \"body\": \"Hello\",\n  \"message_id\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "8f46320a-0d00-445e-8581-49f2cd4d1eb9",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "send",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9a85651a-b906-424d-9e4d-6cd31aea7a10"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "send"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "01ea79c6-e756-4575-b830-21528a696b11",
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "draft",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "draft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1e78ae54-0ad7-4f5a-ac79-d18338959382",
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "80e6c21b-b413-485b-a630-6ed2eb7842a9",
+                    "leftValue": "={{ $json.operation }}",
+                    "rightValue": "reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reply"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        0
+      ],
+      "id": "28e29372-36c4-4882-b8a2-28732d4f74b2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -48
+      ],
+      "id": "d53cded8-afe6-4627-b846-c89f41bebff9",
+      "name": "Send a message",
+      "webhookId": "8546ad4a-a092-4de6-8891-e5cec2a28431",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SHVSba8a0l7RhrJX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        64
+      ],
+      "id": "b19624e9-37ce-42b1-b878-67a431972595",
+      "name": "Create a draft",
+      "webhookId": "0a7f078f-b6c6-4620-9553-210fb88ca848",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SHVSba8a0l7RhrJX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        96
+      ],
+      "id": "c7d8e316-0dfe-4017-b832-aec7672f48e3",
+      "name": "Get many messages",
+      "webhookId": "9a2e16e4-8155-4e5a-9bed-0f248fda8192",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SHVSba8a0l7RhrJX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "reply",
+        "threadId": "={{ $json.message_id }}",
+        "messageId": "={{ $json.message_id }}",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        208
+      ],
+      "id": "8ce25b67-8b5d-440c-97a7-b766e4dcf968",
+      "name": "Reply to a message",
+      "webhookId": "d0136370-feaf-44a5-ab59-a2ef745dc2fd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SHVSba8a0l7RhrJX",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6e98d9c2-acf8-41c2-911b-fcd0cc7315ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8aadea8d74405a31e0c199cadb768ba7e9e834433aea31ba66a1e9498c9555d0"
+  },
+  "nodeGroups": [],
+  "id": "NWm97NRfvPg3x8SH",
+  "tags": []
+}

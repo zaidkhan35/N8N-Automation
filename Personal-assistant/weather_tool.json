@@ -1,0 +1,72 @@
+{
+  "name": "weather_tool",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "City"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "adab92d0-7b1e-4e64-b921-34af5206d8e7",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "cityName": "={{ $json.City }}",
+        "language": "en"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "fa552805-e892-4681-aed9-e943c3d7aa8f",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "yeJoRN5ocB746FfD",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "OpenWeatherMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cea3812f-9356-4c64-902b-b2047847b9ab",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8aadea8d74405a31e0c199cadb768ba7e9e834433aea31ba66a1e9498c9555d0"
+  },
+  "nodeGroups": [],
+  "id": "S5Bcn3OLQAShK8xd",
+  "tags": []
+}

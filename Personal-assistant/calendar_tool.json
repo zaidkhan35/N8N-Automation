@@ -1,0 +1,375 @@
+{
+  "name": "calendar_tool",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"operation\": \"create\",\n  \"title\": \"Dentist appointment\",\n  \"startTime\": \"2026-07-28T15:00:00\",\n  \"endTime\": \"2026-07-28T15:30:00\",\n  \"description\": \"Routine checkup\",\n  \"eventId\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        224
+      ],
+      "id": "93a493f1-46dc-495a-99db-135d35de187c",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d10e8253-f140-4cf5-92dd-c36d1bb1be8c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fc0d2445-80c6-4fa3-b738-a9309cb30575",
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "checkAvailability",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "checkAvailability"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2426914c-864c-44db-9870-047e9fbe95b1",
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "getEvents",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getEvents"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "177dad69-f88e-474b-840c-2158ed637588",
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "01ea0ef4-6013-4e36-a710-a1a744a5e3ac",
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        176
+      ],
+      "id": "3b1cd6f2-c879-47e1-9611-b084456f74fc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "zk6889992@gmail.com",
+          "mode": "list",
+          "cachedResultName": "zk6889992@gmail.com"
+        },
+        "start": "={{ $('When Executed by Another Workflow').item.json.startTime }}",
+        "end": "={{ $('When Executed by Another Workflow').item.json.endTime }}",
+        "useDefaultReminders": false,
+        "additionalFields": {
+          "description": "={{ $('When Executed by Another Workflow').item.json.description }}",
+          "summary": "={{ $('When Executed by Another Workflow').item.json.title }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        -64
+      ],
+      "id": "d4031db0-5480-4d11-b11b-50a402a1643a",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "roUV2kg0dwKPv2l0",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "zk6889992@gmail.com",
+          "mode": "list",
+          "cachedResultName": "zk6889992@gmail.com"
+        },
+        "timeMin": "={{ $('When Executed by Another Workflow').item.json.startTime }}",
+        "timeMax": "={{ $('When Executed by Another Workflow').item.json.endTime }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        128
+      ],
+      "id": "968f13e2-9b0c-47de-af7d-1dd3944a2293",
+      "name": "Get availability in a calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "roUV2kg0dwKPv2l0",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "zk6889992@gmail.com",
+          "mode": "list",
+          "cachedResultName": "zk6889992@gmail.com"
+        },
+        "limit": 20,
+        "timeMin": "={{ $('When Executed by Another Workflow').item.json.startTime }}",
+        "timeMax": "={{ $('When Executed by Another Workflow').item.json.endTime }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        320
+      ],
+      "id": "29e3e789-5152-4cce-98a0-bb520d9ffc86",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "roUV2kg0dwKPv2l0",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "zk6889992@gmail.com",
+          "mode": "list",
+          "cachedResultName": "zk6889992@gmail.com"
+        },
+        "eventId": "={{ $('When Executed by Another Workflow').item.json.eventId }}",
+        "updateFields": {
+          "description": "={{ $('When Executed by Another Workflow').item.json.description }}",
+          "end": "={{ $('When Executed by Another Workflow').item.json.endTime }}",
+          "start": "={{ $('When Executed by Another Workflow').item.json.startTime }}",
+          "summary": "={{ $('When Executed by Another Workflow').item.json.title }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        512
+      ],
+      "id": "4e0a09a5-4528-47b4-b680-3872ac83d6de",
+      "name": "Update an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "roUV2kg0dwKPv2l0",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "zk6889992@gmail.com",
+          "mode": "list",
+          "cachedResultName": "zk6889992@gmail.com"
+        },
+        "eventId": "={{ $('When Executed by Another Workflow').item.json.eventId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        544
+      ],
+      "id": "9616c574-5784-45d0-b004-b1ee61652c50",
+      "name": "Delete an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "roUV2kg0dwKPv2l0",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get availability in a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ce5bac47-c20c-481d-a6c5-95504c340bee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8aadea8d74405a31e0c199cadb768ba7e9e834433aea31ba66a1e9498c9555d0"
+  },
+  "nodeGroups": [],
+  "id": "yPEK898xoNbk4S3Y",
+  "tags": []
+}

@@ -1,0 +1,88 @@
+{
+  "name": "contact_lookup",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"name\": \"Ahmad\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "15f96bd4-61b3-4d07-a9ed-581de544c119",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1cQ9yAc1VlPqFEr3siJ2kzDP0jAQZkUnhztcCaV64YYU",
+          "mode": "list",
+          "cachedResultName": "contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cQ9yAc1VlPqFEr3siJ2kzDP0jAQZkUnhztcCaV64YYU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cQ9yAc1VlPqFEr3siJ2kzDP0jAQZkUnhztcCaV64YYU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "name",
+              "lookupValue": "={{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "00289c91-28c7-4721-8570-6566fb3affdb",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LRUyRRfyQ4Jljpm2",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "29c964f5-ca06-4979-b53c-b80ffd20a189",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8aadea8d74405a31e0c199cadb768ba7e9e834433aea31ba66a1e9498c9555d0"
+  },
+  "nodeGroups": [],
+  "id": "fJriABG3edvOMcc1",
+  "tags": []
+}
